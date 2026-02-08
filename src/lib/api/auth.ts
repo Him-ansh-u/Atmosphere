@@ -1,0 +1,98 @@
+/**
+ * Authentication API functions (Web)
+ */
+
+import { ZLoginResponse, ZRegisterResponse, ZUserSchema, ZVerifyEmail } from "@/types/auth";
+import axiosClient from "./axiosClient";
+import { AUTH_ENDPOINTS, USER_ENDPOINTS } from "./endpoints";
+import Cookies from "js-cookie";
+
+/**
+ * Login
+ */
+export async function login(email: string, password: string) {
+  const data: ZLoginResponse = await axiosClient.post(AUTH_ENDPOINTS.LOGIN, {
+    email,
+    password,
+  });
+
+  if (data?.token) {
+    Cookies.set("token", data.token, {
+      expires: 7,
+      secure: true,
+      sameSite: "strict",
+    });
+  }
+
+  return data.user;
+}
+
+/**
+ * Register
+ */
+export async function registerUser({
+  email,
+  username,
+  password,
+  displayName,
+  accountType = "personal",
+}: {
+  email: string;
+  username: string;
+  password: string;
+  displayName?: string;
+  accountType?: string;
+}) {
+  const res= axiosClient.post(AUTH_ENDPOINTS.REGISTER, {
+    email,
+    username,
+    password,
+    displayName,
+    accountType,
+  });
+  return  res as ZRegisterResponse;
+}
+
+/**
+ * Forgot password
+ */
+export async function forgotPassword(email: string) {
+  return axiosClient.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email });
+}
+
+/**
+ * Verify OTP
+ */
+export async function verifyOtpCheck(email: string, code: string) {
+  return axiosClient.post(AUTH_ENDPOINTS.VERIFY_OTP, { email, code });
+}
+
+/**
+ * Reset password
+ */
+export async function resetPassword(
+  email: string,
+  code: string,
+  newPassword: string,
+) {
+  return axiosClient.post(AUTH_ENDPOINTS.RESET_PASSWORD, {
+    email,
+    code,
+    newPassword,
+  });
+}
+
+/**
+ * Verify email
+ */
+export async function verifyEmail(code: string, email?: string) {
+  const res=await axiosClient.post(AUTH_ENDPOINTS.VERIFY_EMAIL, { code, email });
+  return res as ZVerifyEmail;
+}
+
+/**
+ * Resend OTP
+ */
+export async function resendOtp(email: string) {
+  return axiosClient.post(AUTH_ENDPOINTS.RESEND_OTP, { email });
+}
