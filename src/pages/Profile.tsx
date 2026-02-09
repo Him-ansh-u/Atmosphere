@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import CreatePost from "@/components/CreatePost";
@@ -18,6 +18,10 @@ import { useGetProfile } from "@/hooks/profile/useGetProfile";
 import { ZUserSchema } from "@/types/auth";
 import { formatUserData } from "@/utils/formatUserData";
 import { useMyPosts } from "@/hooks/posts/useGetUserPosts";
+import { useAppStore } from "@/store/useAppStore";
+import { getFollowingList } from "@/lib/api/user";
+import { useGetMyFollowing } from "@/hooks/profile/useGetMyFollowing";
+import { useGetMyFollowers } from "@/hooks/profile/useGetMyFollowers";
 
 
 // -----------------------------------------------------------
@@ -39,8 +43,10 @@ interface Investment {
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { data: profileData } = useGetProfile();
+  const profileData = useAppStore((s) => s.user);
   const { data: myPostsData } = useMyPosts();
+  const { data: myFollowingData } = useGetMyFollowing();
+  const { data: myFollowersData } = useGetMyFollowers();
   const isNewAccount = localStorage.getItem("newAccount") === "true";
   const profileSetupComplete =
     localStorage.getItem("profileSetupComplete") === "true";
@@ -193,7 +199,7 @@ const Profile = () => {
       year: "numeric",
     });
     const step = Number(localStorage.getItem("profileSetupStep") || "0");
-    const totalSteps = 4
+    const totalSteps = 4;
 
   // ---------------------------------------------------
   // -------------------- FULL UI -----------------------
@@ -398,19 +404,18 @@ const Profile = () => {
             {activeSection === "posts" && (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-1">
-                  {(isNewAccount && !profileSetupComplete
-                    ? [1, 2, 3, 4, 5, 6]
-                    : [1, 2, 3, 4, 5, 6]
-                  ).map((item) => (
+                  {myPostsData?.posts?.map((item) => (
                     <div
-                      key={item}
+                      key={item?._id}
                       className="aspect-square bg-muted rounded-sm flex items-center justify-center"
                     >
-                      {!isNewAccount || profileSetupComplete ? (
-                        <span className="text-xs text-muted-foreground">
-                          Post {item}
-                        </span>
-                      ) : null}
+                      {
+                          <img
+                            src={item?.media?.[0].url}
+                            alt={item?.content}
+                            className="w-full h-full object-cover rounded-sm"
+                          />
+                     }
                     </div>
                   ))}
                 </div>
@@ -711,13 +716,13 @@ const Profile = () => {
 
           {/* LIST */}
           <div className="flex-1 overflow-y-auto bg-background">
-            {(showUserList === "followers" ? followersList : followingList)
+            {(showUserList === "followers" ? myFollowersData : myFollowingData)
               .length === 0 ? (
               <p className="text-center text-sm text-muted-foreground mt-4">
                 No users yet
               </p>
             ) : (
-              (showUserList === "followers" ? followersList : followingList).map(
+              (showUserList === "followers" ? myFollowersData : myFollowingData).map(
                 (user) => (
                   <div
                     key={user.id}
@@ -725,8 +730,8 @@ const Profile = () => {
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={user.avatar} />
-                        <AvatarFallback>{user.name[0]}</AvatarFallback>
+                        <AvatarImage src={user.avatarUrl} />
+                        <AvatarFallback>{user.name?.[0] || user.username?.[0] || ""}</AvatarFallback>
                       </Avatar>
 
                       <div>
