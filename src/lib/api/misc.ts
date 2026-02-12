@@ -1,10 +1,13 @@
+import { ZEvent, ZGrant } from "@/types/misc";
 import axiosClient from "./axiosClient";
 import {
   MISC_ENDPOINTS,
   SHARE_ENDPOINTS,
   TEAM_ENDPOINTS,
   UPLOAD_ENDPOINTS,
+  USER_ENDPOINTS,
 } from "./endpoints";
+import { ZUploadResponse } from "@/types/Profile";
 
 // Share content
 export async function shareContent(payload: unknown) {
@@ -57,14 +60,37 @@ export async function searchEntities(
 
 // Fetch grants
 export async function fetchGrants(limit = 20, skip = 0) {
-  return axiosClient.get(MISC_ENDPOINTS.GRANTS, {
+  const res: ZGrant[] = await axiosClient.get(MISC_ENDPOINTS.GRANTS, {
     params: { limit, skip },
   });
+  return res;
 }
 
 // Fetch events
 export async function fetchEvents(limit = 20, skip = 0) {
-  return axiosClient.get(MISC_ENDPOINTS.EVENTS, {
+  const res:ZEvent[] = await axiosClient.get(MISC_ENDPOINTS.EVENTS, {
     params: { limit, skip },
   });
+  return res;
+}
+
+
+export async function uploadImageWeb(file: File) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res:ZUploadResponse = await axiosClient.post(
+    USER_ENDPOINTS.UPLOAD,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+  if (!res.success) {
+    throw new Error("Upload failed");
+  }
+
+  return res;
 }
